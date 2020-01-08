@@ -19,6 +19,7 @@
 from pyanaconda import localization
 from pyanaconda.core.constants import DEFAULT_LANG
 from pyanaconda.core.util import execWithCaptureBinary
+import langtable
 import locale as locale_mod
 import unittest
 from unittest.mock import call, patch, MagicMock
@@ -301,3 +302,29 @@ class LangcodeLocaleMatchingTests(unittest.TestCase):
             order = localization.resolve_date_format(1, 2, 3, fail_safe=False)[0]
             for i in (1, 2, 3):
                 self.assertIn(i, order)
+
+
+class LangtableInterfaceTests(unittest.TestCase):
+    def locale_namedtuple_fields_test(self):
+        """Test langtable.Locale field names and order."""
+        self.assertEqual(
+            str(langtable.parse_locale("")),
+            "Locale(language='', script='', territory='', variant='', encoding='')")
+
+    def parse_locale_interpretation_test(self):
+        """Test langtable.parse_locale() interpretation of locale values."""
+        self.assertEqual(
+            str(langtable.parse_locale("en_US")),
+            "Locale(language='en', script='', territory='US', variant='', encoding='')")
+        self.assertEqual(
+            str(langtable.parse_locale("ks_IN.utf8@devanagari")),
+            "Locale(language='ks', script='Deva', territory='IN', variant='', encoding='utf8')")
+        self.assertEqual(
+            str(langtable.parse_locale("tt_RU.utf8@iqtelif")),
+            "Locale(language='tt', script='Latn', territory='RU', variant='', encoding='utf8')")
+        self.assertEqual(
+            str(langtable.parse_locale("C.UTF-8")),
+            "Locale(language='en', script='', territory='US', variant='POSIX', encoding='UTF-8')")
+        self.assertEqual(
+            str(langtable.parse_locale("POSIX")),
+            "Locale(language='en', script='', territory='US', variant='POSIX', encoding='')")
