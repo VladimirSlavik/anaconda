@@ -339,6 +339,8 @@ def setup_display(anaconda, options):
             stdout_log.warning("X startup failed, falling back to text mode")
             anaconda.display_mode = constants.DisplayModes.TUI
             anaconda.gui_startup_failed = True
+            #if conf.system.can_switch_tty:
+            #    util.vtActivate(1)
             time.sleep(2)
 
         if not anaconda.gui_startup_failed:

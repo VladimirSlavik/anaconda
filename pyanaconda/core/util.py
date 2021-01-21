@@ -217,10 +217,16 @@ def startX(argv, output_redirect=None, timeout=X_TIMEOUT):
     """
     # Use a list so the value can be modified from the handler function
     x11_started = [False]
+    x11_failed = [False]
+    old_sigusr1_handler = None
 
     def sigusr1_handler(num, frame):
         log.debug("X server has signalled a successful start.")
         x11_started[0] = True
+        if x11_failed[0]:
+            # We were left installed to wait for first SIGUSR1 that might come from the
+            # still-starting X11. Ignore that, and restore the previous handler.
+            signal.signal(signal.SIGUSR1, old_sigusr1_handler)
 
     # Fail after, let's say a minute, in case something weird happens
     # and we don't receive SIGUSR1
@@ -242,6 +248,8 @@ def startX(argv, output_redirect=None, timeout=X_TIMEOUT):
         # Start the timer
         log.debug("Setting timeout %s seconds for starting X.", timeout)
         signal.alarm(timeout)
+        import time
+        time.sleep(10)
 
         childproc = startProgram(argv, stdout=output_redirect, stderr=output_redirect,
                                  preexec_fn=sigusr1_preexec)
@@ -254,7 +262,9 @@ def startX(argv, output_redirect=None, timeout=X_TIMEOUT):
     finally:
         # Put everything back where it was
         signal.alarm(0)
-        signal.signal(signal.SIGUSR1, old_sigusr1_handler)
+        if not x11_failed[0]:
+            # Keep the X11 temporary handler to eat a delayed SIGUSR1 if it starts later
+            signal.signal(signal.SIGUSR1, old_sigusr1_handler)
         signal.signal(signal.SIGALRM, old_sigalrm_handler)
 
 
